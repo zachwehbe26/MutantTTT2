@@ -39,6 +39,8 @@ end
 if SERVER then
    -- Give Loadout on respawn and rolechange
 	function ROLE:GiveRoleLoadout(ply, isRoleChange)
+		--Give mutant the default status
+		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
 		--Timer that heals player every five seconds
 		timer.Create("ttt2_mut_regen_timer", GetConVar("ttt2_mut_healing_interval"):GetInt(), 0, function()
 			if ply:Health() <= ply:GetMaxHealth() - GetConVar("ttt2_mut_healing_amount"):GetInt() then
@@ -55,6 +57,10 @@ if SERVER then
 		ply:RemoveEquipmentItem("item_ttt_radar")
 		ply:RemoveItem("item_mut_speed")
 		timer.Remove("ttt2_mut_regen_timer")
+		STATUS:RemoveStatus(ply, "ttt2_mut1_icon")
+		STATUS:RemoveStatus(ply, "ttt2_mut2_icon")
+		STATUS:RemoveStatus(ply, "ttt2_mut3_icon")
+		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
 	end
 end
 
