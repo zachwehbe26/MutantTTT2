@@ -2,6 +2,10 @@ if SERVER then
 	AddCSLuaFile()
 	--Resource files here
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut.vmt")
+	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut1.png")
+	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut2.png")
+	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut3.png")
+	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut4.png")
 end
 
 function ROLE:PreInitialize()
