@@ -39,6 +39,12 @@ end
 if SERVER then
    -- Give Loadout on respawn and rolechange
 	function ROLE:GiveRoleLoadout(ply, isRoleChange)
+		if not GetConVar("ttt2_mut_firedmg"):GetBool() then
+			ply:GiveEquipmentItem("item_ttt_nofiredmg")
+		end
+		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() then
+			ply:GiveEquipmentItem("item_ttt_noexplosiondmg")
+		end
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
 		--Timer that heals player every five seconds
@@ -53,6 +59,12 @@ if SERVER then
 
 	-- Remove Loadout on death and rolechange
 	function ROLE:RemoveRoleLoadout(ply, isRoleChange)
+		if not GetConVar("ttt2_mut_firedmg"):GetBool() then
+			ply:RemoveEquipmentItem("item_ttt_nofiredmg")
+		end
+		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() then
+			ply:RemoveEquipmentItem("item_ttt_noexplosiondmg")
+		end
 		ply:SetMaxHealth(100)
 		ply:RemoveEquipmentItem("item_ttt_radar")
 		ply:RemoveItem("item_mut_speed")
@@ -68,6 +80,9 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not IsValid(target) or not target:IsPlayer() then return end
 	if not (target:GetRoleString() == "mutant") then return end
 	local dmgtaken =  dmginfo:GetDamage()
+	--End function if damage is fire and/or explosive with cvar
+	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
+	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
 	print("Ow!!" .. dmgtaken)
 	--round float to integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
@@ -88,7 +103,8 @@ end)
 CreateConVar("ttt2_mut_healing_interval", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_healing_amount", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_speed_multiplier", "1.2", {FCVAR_ARCHIVE, FCVAR_NOTIFY})
-CreateConVar("ttt2_mut_env_damage", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_firedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_explosivedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 if CLIENT then
   function ROLE:AddToSettingsMenu(parent)
@@ -119,8 +135,14 @@ if CLIENT then
 	})
 	
 	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_env_damage",
-      label = "label_mut_env_damage"
+      serverConvar = "ttt2_mut_firedmg",
+      label = "label_mut_firedmg"
     })
+	
+	form:MakeCheckBox({
+      serverConvar = "ttt2_mut_explosivedmg",
+      label = "label_mut_explosivedmg"
+    })
+	
   end
 end
