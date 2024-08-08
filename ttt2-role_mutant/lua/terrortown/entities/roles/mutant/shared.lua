@@ -47,14 +47,7 @@ if SERVER then
 		end
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
-		--Timer that heals player every five seconds
-		timer.Create("ttt2_mut_regen_timer", GetConVar("ttt2_mut_healing_interval"):GetInt(), 0, function()
-			if ply:Health() <= ply:GetMaxHealth() - GetConVar("ttt2_mut_healing_amount"):GetInt() then
-				ply:SetHealth(ply:Health()+ GetConVar("ttt2_mut_healing_amount"):GetInt())
-			else
-				ply:SetHealth(ply:GetMaxHealth())
-			end
-		end)
+		MUTANT_DATA:ResetDamage()
 	end
 
 	-- Remove Loadout on death and rolechange
@@ -73,32 +66,9 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut2_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut3_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
+		MUTANT_DATA:ResetDamage()
 	end
 end
-
-hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
-	if not IsValid(target) or not target:IsPlayer() then return end
-	if not (target:GetRoleString() == "mutant") then return end
-	local dmgtaken =  dmginfo:GetDamage()
-	--End function if damage is fire and/or explosive with cvar
-	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
-	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
-	print("Ow!!" .. dmgtaken)
-	--round float to integer
-	dmgtaken = math.floor(dmgtaken + 0.5)
-	MUTANT_DATA:AddDamage(dmgtaken)
-	PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. MUTANT_DATA:GetDamage())
-	computeBuffs()
-end)
-
-
-hook.Add("TTTBeginRound", "MutantBeginRound", function()
-    MUTANT_DATA:ResetDamage()
-end)
-
-hook.Add("TTTEndRound", "MutantEndRound", function()
-	MUTANT_DATA:ResetDamage()
-end)
 
 CreateConVar("ttt2_mut_healing_interval", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_healing_amount", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
