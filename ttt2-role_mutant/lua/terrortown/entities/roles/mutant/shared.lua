@@ -36,6 +36,8 @@ function ROLE:Initialize()
   roles.SetBaseRole(self, ROLE_INNOCENT)
 end
 
+local damage_taken = 0
+
 if SERVER then
    -- Give Loadout on respawn and rolechange
 	function ROLE:GiveRoleLoadout(ply, isRoleChange)
@@ -47,7 +49,7 @@ if SERVER then
 		end
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
-		MUTANT_DATA:ResetDamage()
+		damage_taken = 0
 	end
 
 	-- Remove Loadout on death and rolechange
@@ -66,8 +68,122 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut2_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut3_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
-		MUTANT_DATA:ResetDamage()
+		damage_taken = 0
 	end
+end
+
+--does the math to determine what buffs to give, and what status to give
+function computeBuffs(mutant_ply)
+	if damage_taken >= 50 and not mutant_ply:HasEquipmentItem("item_ttt_radar") then
+		mutant_ply:GiveEquipmentItem("item_ttt_radar")
+		mutant_ply:PrintMessage(HUD_PRINTTALK, "50 Damage Taken! You now have a radar.")
+		if damage_taken <= 74 then
+			STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
+			STATUS:AddStatus(mutant_ply, "ttt2_mut2_icon", false)
+		end
+	end
+	if damage_taken >= 75 and mutant_ply:GetMaxHealth() <= 100 then
+		mutant_ply:SetMaxHealth(150)
+		mutant_ply:PrintMessage(HUD_PRINTTALK, "75 Damage Taken! You now have 150 max health")
+		if damage_taken <= 99 then
+			STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
+			STATUS:RemoveStatus(mutant_ply, "ttt2_mut2_icon")
+			STATUS:AddStatus(mutant_ply, "ttt2_mut3_icon", false)
+		end
+	end
+	if damage_taken >= 100 and not mutant_ply:HasEquipmentItem("item_mut_speed") then
+		mutant_ply:GiveItem("item_mut_speed")
+		mutant_ply:PrintMessage(HUD_PRINTTALK, "100 Damage Taken! You are faster.")
+		STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
+		STATUS:RemoveStatus(mutant_ply, "ttt2_mut2_icon")
+		STATUS:RemoveStatus(mutant_ply, "ttt2_mut3_icon")
+		STATUS:AddStatus(mutant_ply, "ttt2_mut4_icon", false)
+	end
+	--for every 10 dmg the mutant takes after taking 100 damage, increase its health by 1
+	if mutant_ply:HasEquipmentItem("item_mut_speed") then
+		if(damage_taken - 100) / 10 >= 1 then 
+			local computeNewHealth = math.floor(150 + (damage_taken - 100) / 10)
+			mutant_ply:PrintMessage(HUD_PRINTTALK, "Max Health increased by " .. (computeNewHealth - mutant_ply:GetMaxHealth()))
+			mutant_ply:SetMaxHealth(computeNewHealth)
+		end
+	end
+end
+
+--calls this hook when someone takes damage
+--if the player that took damage is the mutant, only add damage to that player
+hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
+	if not IsValid(target) or not target:IsPlayer() then return end
+	if not (target:GetRoleString() == "mutant") then return end
+	local dmgtaken =  dmginfo:GetDamage()
+	--End function if damage is fire and/or explosive with cvar
+	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
+	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
+	--print("Ow!!" .. dmgtaken)
+	--round float to nearest integer
+	dmgtaken = math.floor(dmgtaken + 0.5)
+	damage_taken = damage_taken + dmgtaken
+	target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. damage_taken)
+	computeBuffs(target)
+end)
+
+hook.Add("Think","MutHealThink", function()
+	if GetRoundState() ~= ROUND_ACTIVE then return end
+	for _, ply in ipairs( player.GetAll() ) do
+		if not ply:Alive() or ply:IsSpec() then continue end
+		if ply:GetSubRole() == ROLE_MUTANT then
+			if heal_time <= CurTime() then
+			if ply:Health() <= ply:GetMaxHealth() - GetConVar("ttt2_mut_healing_amount"):GetInt() then
+				ply:SetHealth(ply:Health()+ GetConVar("ttt2_mut_healing_amount"):GetInt())
+			else
+				ply:SetHealth(ply:GetMaxHealth())
+			end
+			heal_time = (CurTime() + GetConVar("ttt2_mut_healing_interval"):GetInt())
+		end
+		end
+	end
+end) 
+
+hook.Add("TTTBeginRound", "MutantBeginRound", function()
+    damage_taken = 0
+end)
+
+hook.Add("TTTEndRound", "MutantEndRound", function()
+	damage_taken = 0
+end)
+
+--Transforming statuses go here
+if CLIENT then
+	hook.Add("Initialize", "ttt2_mut_init", function()
+		
+		STATUS:RegisterStatus("ttt2_mut1_icon", {
+			hud = Material("vgui/ttt/icons/icon_mut1.png"),
+			type = "good",
+			name = "Mutant",
+			sidebarDescription = "status_mut2_icon"
+		})
+		
+		STATUS:RegisterStatus("ttt2_mut2_icon", {
+			hud = Material("vgui/ttt/icons/icon_mut2.png"),
+			type = "good",
+			name = "Mutant",
+			sidebarDescription = "status_mut2_icon"
+		})
+		
+		STATUS:RegisterStatus("ttt2_mut3_icon", {
+			hud = Material("vgui/ttt/icons/icon_mut3.png"),
+			type = "good",
+			name = "Mutant",
+			sidebarDescription = "status_mut3_icon"
+		})
+		
+		STATUS:RegisterStatus("ttt2_mut4_icon", {
+			hud = Material("vgui/ttt/icons/icon_mut4.png"),
+			type = "good",
+			name = "Mutant",
+			sidebarDescription = "status_mut4_icon"
+		})
+		
+	end)
 end
 
 CreateConVar("ttt2_mut_healing_interval", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
