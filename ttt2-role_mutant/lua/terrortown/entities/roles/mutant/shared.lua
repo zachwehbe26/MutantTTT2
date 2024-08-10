@@ -9,7 +9,7 @@ if SERVER then
 end
 
 function ROLE:PreInitialize()
-  self.color = Color(42, 54, 41, 255)
+  self.color = Color(0, 101, 51, 255)
 
   self.abbr = "mut" -- abbreviation
   self.surviveBonus = 0 -- bonus multiplier for every survive while another player was killed
@@ -109,39 +109,22 @@ function computeBuffs(mutant_ply)
 	end
 end
 
-	--calls this hook when someone takes damage
-	--if the player that took damage is the mutant, only add damage to that player
-	hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
-		if not IsValid(target) or not target:IsPlayer() then return end
-		if target:GetSubRole() ~= ROLE_MUTANT then return end
-		local dmgtaken =  dmginfo:GetDamage()
-		--End function if damage is fire and/or explosive with cvar
-		if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
-		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
-		--round float to nearest integer
-		dmgtaken = math.floor(dmgtaken + 0.5)
-		print("Ow!!" .. dmgtaken)
-		target.damage_taken = target.damage_taken + dmgtaken
-		target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.damage_taken)
-		computeBuffs(target)
-		print("target: " .. target:GetName() )
-	end)
-
-hook.Add("Think","MutHealThink", function()
-	if GetRoundState() ~= ROUND_ACTIVE then return end
-	for _, ply in ipairs( player.GetAll() ) do
-		if not ply:Alive() or ply:IsSpec() then continue end
-		if ply:GetSubRole() == ROLE_MUTANT then
-			if heal_time <= CurTime() then
-			if ply:Health() <= ply:GetMaxHealth() - GetConVar("ttt2_mut_healing_amount"):GetInt() then
-				ply:SetHealth(ply:Health()+ GetConVar("ttt2_mut_healing_amount"):GetInt())
-			else
-				ply:SetHealth(ply:GetMaxHealth())
-			end
-			heal_time = (CurTime() + GetConVar("ttt2_mut_healing_interval"):GetInt())
-		end
-		end
-	end
+--calls this hook when someone takes damage
+--if the player that took damage is the mutant, only add damage to that player
+hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
+	if not IsValid(target) or not target:IsPlayer() then return end
+	if target:GetSubRole() ~= ROLE_MUTANT then return end
+	local dmgtaken =  dmginfo:GetDamage()
+	--End function if damage is fire and/or explosive with cvar
+	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
+	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
+	--round float to nearest integer
+	dmgtaken = math.floor(dmgtaken + 0.5)
+	--print("Ow!!" .. dmgtaken)
+	target.damage_taken = target.damage_taken + dmgtaken
+	target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.damage_taken)
+	computeBuffs(target)
+	--print(target:GetName() .. " damage: " .. target.damage_taken)
 end)
 
 if CLIENT then
@@ -158,7 +141,10 @@ if CLIENT then
 		client.damage_taken = 0
 	end)
 end
---Transforming statuses go here
+
+-- -- -- -- --
+-- STATUSES -- 
+-- -- -- -- --
 if CLIENT then
 	hook.Add("Initialize", "ttt2_mut_init", function()
 		
@@ -193,12 +179,16 @@ if CLIENT then
 	end)
 end
 
+-- -- -- -- -
+-- CONVARS --
+-- -- -- -- -
 CreateConVar("ttt2_mut_healing_interval", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_healing_amount", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_speed_multiplier", "1.2", {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_firedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_explosivedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
+--Adds convars to the F1 menu
 if CLIENT then
   function ROLE:AddToSettingsMenu(parent)
     local form = vgui.CreateTTT2Form(parent, "header_roles_additional")
