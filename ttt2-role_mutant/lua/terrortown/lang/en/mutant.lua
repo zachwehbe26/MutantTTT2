@@ -2,11 +2,11 @@ local L = LANG.GetLanguageTableReference("en")
 
 -- GENERAL ROLE LANGUAGE STRINGS
 L[MUTANT.name] = "Mutant"
-L["info_popup_" .. PATIENT.name] = [[]]
-L["body_found_" .. PATIENT.abbr] = "They were a Mutant."
-L["search_role_" .. PATIENT.abbr] = "This person was a Mutant!"
-L["target_" .. PATIENT.name] = "Mutant"
-L["ttt2_desc_" .. PATIENT.name] = [[You are the Mutant! You regen health and get buffs the more damage you take!]]
+L["info_popup_" .. MUTANT.name] = [[]]
+L["body_found_" .. MUTANT.abbr] = "They were a Mutant."
+L["search_role_" .. MUTANT.abbr] = "This person was a Mutant!"
+L["target_" .. MUTANT.name] = "Mutant"
+L["ttt2_desc_" .. MUTANT.name] = [[You are the Mutant! You regen health and get buffs the more damage you take!]]
 
 --CONVAR LANGUAGE STRINGS
 L["label_mut_healing_interval"] = "How often the mutant heals(in seconds): "
