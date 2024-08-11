@@ -1,11 +1,5 @@
 if SERVER then
 	AddCSLuaFile()
-	--Resource files here
-	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut.vmt")
-	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut1.png")
-	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut2.png")
-	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut3.png")
-	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut4.png")
 end
 
 function ROLE:PreInitialize()
@@ -36,7 +30,6 @@ function ROLE:Initialize()
   roles.SetBaseRole(self, ROLE_INNOCENT)
 end
 
-
 if SERVER then
    -- Give Loadout on respawn and rolechange
 	function ROLE:GiveRoleLoadout(ply, isRoleChange)
@@ -46,6 +39,7 @@ if SERVER then
 		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() then
 			ply:GiveEquipmentItem("item_ttt_noexplosiondmg")
 		end
+		ply:GiveEquipmentItem("item_ttt_nopropdmg")
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
 		ply.damage_taken = 0
@@ -59,6 +53,7 @@ if SERVER then
 		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() then
 			ply:RemoveEquipmentItem("item_ttt_noexplosiondmg")
 		end
+		ply:RemoveEquipmentItem("item_ttt_nopropdmg")
 		ply:SetMaxHealth(100)
 		ply:RemoveEquipmentItem("item_ttt_radar")
 		ply:RemoveItem("item_mut_speed")
@@ -70,7 +65,6 @@ if SERVER then
 		ply.damage_taken = 0
 	end
 end
-
 
 --does the math to determine what buffs to give, and what status to give
 function computeBuffs(mutant_ply)
@@ -118,6 +112,7 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	--End function if damage is fire and/or explosive with cvar
 	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
 	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
+	if dmginfo:IsDamageType( 1 ) then return end
 	--round float to nearest integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
 	--print("Ow!!" .. dmgtaken)
@@ -152,7 +147,7 @@ if CLIENT then
 			hud = Material("vgui/ttt/icons/icon_mut1.png"),
 			type = "good",
 			name = "Mutant",
-			sidebarDescription = "status_mut2_icon"
+			sidebarDescription = "status_mut1_icon"
 		})
 		
 		STATUS:RegisterStatus("ttt2_mut2_icon", {
