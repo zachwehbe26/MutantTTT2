@@ -39,6 +39,9 @@ if SERVER then
 		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() then
 			ply:GiveEquipmentItem("item_ttt_noexplosiondmg")
 		end
+		if not GetConVar("ttt2_mut_falldmg"):GetBool() then
+			ply:GiveEquipmentItem("item_ttt_nofalldmg")
+		end
 		ply:GiveEquipmentItem("item_ttt_nopropdmg")
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
@@ -52,6 +55,9 @@ if SERVER then
 		end
 		if not GetConVar("ttt2_mut_explosivedmg"):GetBool() then
 			ply:RemoveEquipmentItem("item_ttt_noexplosiondmg")
+		end
+		if not GetConVar("ttt2_mut_falldmg"):GetBool() then
+			ply:RemoveEquipmentItem("item_ttt_nofalldmg")
 		end
 		ply:RemoveEquipmentItem("item_ttt_nopropdmg")
 		ply:SetMaxHealth(100)
@@ -109,17 +115,18 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not IsValid(target) or not target:IsPlayer() then return end
 	if target:GetSubRole() ~= ROLE_MUTANT then return end
 	local dmgtaken =  dmginfo:GetDamage()
-	--End function if damage is fire and/or explosive with cvar
+	--End function if damage is fire/explosive/fall with cvar
 	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
 	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
+	if not GetConVar("ttt2_mut_falldmg"):GetBool() and dmginfo:IsDamageType( 32 ) then return end
 	if dmginfo:IsDamageType( 1 ) then return end
 	--round float to nearest integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
-	--print("Ow!!" .. dmgtaken)
 	target.damage_taken = target.damage_taken + dmgtaken
 	target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.damage_taken)
 	computeBuffs(target)
-	--print(target:GetName() .. " damage: " .. target.damage_taken)
+	--no healing for 5 seconds after taking damage
+	heal_time = (CurTime() + 5)
 end)
 
 if CLIENT then
@@ -177,11 +184,12 @@ end
 -- -- -- -- -
 -- CONVARS --
 -- -- -- -- -
-CreateConVar("ttt2_mut_healing_interval", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
-CreateConVar("ttt2_mut_healing_amount", 5, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_healing_interval", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_healing_amount", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_speed_multiplier", "1.2", {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_firedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_explosivedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_falldmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 --Adds convars to the F1 menu
 if CLIENT then
@@ -220,6 +228,11 @@ if CLIENT then
 	form:MakeCheckBox({
       serverConvar = "ttt2_mut_explosivedmg",
       label = "label_mut_explosivedmg"
+    })
+	
+	form:MakeCheckBox({
+      serverConvar = "ttt2_mut_falldmg",
+      label = "label_mut_falldmg"
     })
 	
   end

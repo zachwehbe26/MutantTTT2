@@ -14,6 +14,8 @@ L["label_mut_healing_amount"] = "How much the mutant heals for: "
 L["label_mut_speed_multiplier"] = "The speed multiplier after taking 100 damage: "
 L["label_mut_firedmg"] = "Mutant receives fire damage"
 L["label_mut_explosivedmg"] = "Mutant receives exposive damage"
+L["label_mut_falldmg"] = "Mutant receives fall damage"
+
 
 L["status_mut1_icon"] = "Take damage to receive buffs!"
 L["status_mut2_icon"] = "You have taken 50 damage and received a radar!"
