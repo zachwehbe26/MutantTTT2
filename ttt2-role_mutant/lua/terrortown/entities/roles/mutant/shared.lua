@@ -110,7 +110,7 @@ function computeBuffs(mutant_ply)
 end
 
 --calls this hook when someone takes damage
---if the player that took damage is the mutant, only add damage to that player
+--if the player that took damage is the mutant, only add damage to that player, then run the compute buffs function
 hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not IsValid(target) or not target:IsPlayer() then return end
 	if target:GetSubRole() ~= ROLE_MUTANT then return end

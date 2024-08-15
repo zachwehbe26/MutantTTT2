@@ -1,3 +1,4 @@
+--Download icons automatically
 if SERVER then
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut.vmt")
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut1.png")
