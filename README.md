@@ -13,10 +13,10 @@ As a bonus, for every 10 damage taken after 100, you gain 1 max health point. Fo
 
 The mutant also receives no prop damage by default. Unfortunately, the damage system does not favor damage in the form of physics objects. So think of it as the mutant having tough skin or something like that
 
-[img]https://i.imgur.com/jIBWtbM.png[/img]
+## Convars ##
 Convars are variables that are introduced to allow server owners to customize the gameplay without changing the code. There are always a handful of convars automatically created by TTT2, that define the spawn parameters of this role and are found in ULX. Additionally there might be some role specific convars, which have to be set in the server config file.
 
-## Normal Role Convars (also found in ULX) ##
+### Normal Role Convars (also found in ULX) ###
 
 enable or disable this role 
   ttt_mutant_enabled [0/1] (default 1) <br><br>
@@ -30,7 +30,7 @@ the amount of players needed for this role to spawn
   ttt_mutant_min_players [0..n] (default 6) <br><br>
 
 
-## Mutant Specific Convars (found in F1 menu) ##
+### Mutant Specific Convars (found in F1 menu) ###
 
 How often the mutant heals(in seconds)
   ttt2_mut_healing_interval [1...10] (default 1) <br><br>
