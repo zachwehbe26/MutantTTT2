@@ -1,5 +1,6 @@
 if SERVER then
 	AddCSLuaFile()
+	util.AddNetworkString("SendMutantDamage")
 end
 
 function ROLE:PreInitialize()
@@ -46,6 +47,7 @@ if SERVER then
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
 		ply.damage_taken = 0
+		MutantSendDamageTaken(ply,0)
 	end
 
 	-- Remove Loadout on death and rolechange
@@ -69,8 +71,16 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut3_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
 		ply.damage_taken = 0
+		MutantSendDamageTaken(ply,0)
 	end
+		function MutantSendDamageTaken(mutant_ply, damage_taken)
+		print("Mutant Receive Damage: "..damage_taken)
+		net.Start("SendMutantDamage")
+		net.WriteInt(damage_taken or 0, 32) -- Send the number (32-bit signed integer)
+		net.Send(mutant_ply)
+		end
 end
+
 
 --does the math to determine what buffs to give, and what status to give
 function computeBuffs(mutant_ply)
@@ -109,12 +119,22 @@ function computeBuffs(mutant_ply)
 	end
 end
 
+if CLIENT then
+    net.Receive("SendMutantDamage", function()
+        local mutant_damage_taken = net.ReadInt(32) -- Receive the number and set the variable
+		LocalPlayer().mutant_damage_taken = mutant_damage_taken
+    end)
+end
+
 --calls this hook when someone takes damage
 --if the player that took damage is the mutant, only add damage to that player, then run the compute buffs function
 hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not IsValid(target) or not target:IsPlayer() then return end
 	if target:GetSubRole() ~= ROLE_MUTANT then return end
 	local dmgtaken =  dmginfo:GetDamage()
+	if GetConVar("ttt2_mut_attribute_plydmg_only"):GetBool() then --Check if mutant attribute damage is only applied from other players
+		if not dmginfo:GetAttacker():IsPlayer() or dmginfo:GetAttacker() == target then return end --If damage is not from another player or is the mutant, do not add to damage
+	end
 	--End function if damage is fire/explosive/fall with cvar
 	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
 	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
@@ -123,7 +143,8 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	--round float to nearest integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
 	target.damage_taken = target.damage_taken + dmgtaken
-	target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.damage_taken)
+	--target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.mutant_damage_taken)
+	MutantSendDamageTaken(target, target.damage_taken)
 	computeBuffs(target)
 	--no healing for 5 seconds after taking damage
 	heal_time = (CurTime() + 5)
@@ -134,13 +155,15 @@ if CLIENT then
 		local client = LocalPlayer()
 		if client:GetSubRole() ~= ROLE_MUTANT then return end
 		if not IsValid(client) or not client:IsPlayer() then return end
-		client.damage_taken = 0
+		client.mutant_damage_taken = 0
+		MutantSendDamageTaken(client,0)
 	end)
 	hook.Add("TTTEndRound", "MutantEndRound", function()
 		local client = LocalPlayer()
 		if client:GetSubRole() ~= ROLE_MUTANT then return end
 		if not IsValid(client) or not client:IsPlayer() then return end
-		client.damage_taken = 0
+		client.mutant_damage_taken = 0
+		MutantSendDamageTaken(client,0)
 	end)
 end
 
@@ -148,38 +171,62 @@ end
 -- STATUSES -- 
 -- -- -- -- --
 if CLIENT then
-	hook.Add("Initialize", "ttt2_mut_init", function()
-		
+	hook.Add("Initialize", "ttt2_mut_init", function()		
 		STATUS:RegisterStatus("ttt2_mut1_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut1.png"),
 			type = "good",
+			DrawInfo = function()
+				if LocalPlayer().mutant_damage_taken then
+					return math.floor(LocalPlayer().mutant_damage_taken)
+				else
+					return 0
+				end
+			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut1_icon"
 		})
-		
 		STATUS:RegisterStatus("ttt2_mut2_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut2.png"),
 			type = "good",
+			DrawInfo = function()
+				if LocalPlayer().mutant_damage_taken then
+					return math.floor(LocalPlayer().mutant_damage_taken)
+				else
+					return 0
+				end
+			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut2_icon"
-		})
-		
+		})	
 		STATUS:RegisterStatus("ttt2_mut3_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut3.png"),
 			type = "good",
+			DrawInfo = function()
+				if LocalPlayer().mutant_damage_taken then
+					return math.floor(LocalPlayer().mutant_damage_taken)
+				else
+					return 0
+				end
+			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut3_icon"
-		})
-		
+		})	
 		STATUS:RegisterStatus("ttt2_mut4_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut4.png"),
 			type = "good",
+			DrawInfo = function()
+				if LocalPlayer().mutant_damage_taken then
+					return math.floor(LocalPlayer().mutant_damage_taken)
+				else
+					return 0
+				end
+			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut4_icon"
-		})
-		
-	end)
+		})	
+	end) 
 end
+
 
 -- -- -- -- -
 -- CONVARS --
@@ -190,6 +237,7 @@ CreateConVar("ttt2_mut_speed_multiplier", "1.2", {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_firedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_explosivedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_falldmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_attribute_plydmg_only", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 --Adds convars to the F1 menu
 if CLIENT then
@@ -233,6 +281,11 @@ if CLIENT then
 	form:MakeCheckBox({
       serverConvar = "ttt2_mut_falldmg",
       label = "label_mut_falldmg"
+    })
+	
+	form:MakeCheckBox({
+      serverConvar = "ttt2_mut_attribute_plydmg_only",
+      label = "label_mut_attribute_plydmg_only"
     })
 	
   end
