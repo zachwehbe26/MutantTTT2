@@ -43,9 +43,12 @@ if SERVER then
 		if not GetConVar("ttt2_mut_falldmg"):GetBool() then
 			ply:GiveEquipmentItem("item_ttt_nofalldmg")
 		end
-		ply:GiveEquipmentItem("item_ttt_nopropdmg")
+		if not GetConVar("ttt2_mut_propdmg"):GetBool() then
+			ply:GiveEquipmentItem("item_ttt_nopropdmg")
+		end
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
+		STATUS:AddStatus(ply, "ttt2_mut_regen", false)
 		ply.damage_taken = 0
 		MutantSendDamageTaken(ply,0)
 	end
@@ -70,6 +73,7 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut2_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut3_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
+		STATUS:RemoveStatus(ply, "ttt2_mut_regen")
 		ply.damage_taken = 0
 		MutantSendDamageTaken(ply,0)
 	end
@@ -148,6 +152,8 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	computeBuffs(target)
 	--no healing for 5 seconds after taking damage
 	heal_time = (CurTime() + 5)
+	STATUS:AddTimedStatus(target, "ttt2_mut_healing_cooldown", 5, true)
+	STATUS:RemoveStatus(target, "ttt2_mut_regen")
 end)
 
 if CLIENT then
@@ -223,7 +229,27 @@ if CLIENT then
 			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut4_icon"
-		})	
+		})
+		STATUS:RegisterStatus("ttt2_mut_regen", {
+			hud = Material("vgui/ttt/icons/regen_mut.png"),
+			type = "good",
+			DrawInfo = function()
+				if GetConVar("ttt2_mut_healing_amount"):GetInt() then
+					return GetConVar("ttt2_mut_healing_amount"):GetInt()
+				else
+					return 0
+				end
+			end,
+			name = "Mutant",
+			sidebarDescription = "status_mut_regen"
+		})
+		STATUS:RegisterStatus("ttt2_mut_healing_cooldown", {
+			hud = Material("vgui/ttt/icons/regen_mut.png"),
+			type = "bad",
+			name = "Mutant",
+			sidebarDescription = "status_mut_regen_cooldown"
+		})
+		
 	end) 
 end
 
@@ -237,6 +263,7 @@ CreateConVar("ttt2_mut_speed_multiplier", "1.2", {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_firedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_explosivedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_falldmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_propdmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_attribute_plydmg_only", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 --Adds convars to the F1 menu
@@ -281,6 +308,11 @@ if CLIENT then
 	form:MakeCheckBox({
       serverConvar = "ttt2_mut_falldmg",
       label = "label_mut_falldmg"
+    })
+	
+	form:MakeCheckBox({
+      serverConvar = "ttt2_mut_propdmg",
+      label = "label_mut_propdmg"
     })
 	
 	form:MakeCheckBox({

@@ -5,6 +5,7 @@ if SERVER then
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut2.png")
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut3.png")
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_mut4.png")
+	resource.AddFile("materials/vgui/ttt/dynamic/roles/regen_mut.png")
 end
 
 --heal timer that sets the time to the current time plus the number of seconds we want to wait
@@ -20,8 +21,10 @@ hook.Add("Think","MutHealThink", function()
 		if ply:GetSubRole() ~= ROLE_MUTANT then continue end
 		if ply:Health() <= ply:GetMaxHealth() - GetConVar("ttt2_mut_healing_amount"):GetInt() then
 			ply:SetHealth(ply:Health()+ GetConVar("ttt2_mut_healing_amount"):GetInt())
+			STATUS:AddStatus(ply, "ttt2_mut_regen", false)
 		else 
 			ply:SetHealth(ply:GetMaxHealth())
+			STATUS:AddStatus(ply, "ttt2_mut_regen", false)
 		end
 	end
 	heal_time = (CurTime() + GetConVar("ttt2_mut_healing_interval"):GetInt())
