@@ -143,7 +143,7 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
 	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
 	if not GetConVar("ttt2_mut_falldmg"):GetBool() and dmginfo:IsDamageType( 32 ) then return end
-	if dmginfo:IsDamageType( 1 ) then return end
+	if not GetConVar("ttt2_mut_propdmg"):GetBool() and dmginfo:IsDamageType( 1 ) then return end
 	--round float to nearest integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
 	target.damage_taken = target.damage_taken + dmgtaken
