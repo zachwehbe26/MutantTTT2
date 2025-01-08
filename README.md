@@ -49,6 +49,7 @@ Mutant receives fall damage
 --
 Credits <br>
 cheezbawlz: Coding <br>
+MrXonte: Coding <br>
 milkwater: Icons
 
 ![cover_mut](https://github.com/user-attachments/assets/9faa8d02-f050-44cc-923e-6fcb8be3201f)
