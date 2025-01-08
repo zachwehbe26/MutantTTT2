@@ -237,7 +237,7 @@ if CLIENT then
 			type = "good",
 			DrawInfo = function()
 				if GetConVar("ttt2_mut_healing_amount"):GetInt() then
-					return GetConVar("ttt2_mut_healing_amount"):GetInt()
+					return "+"..GetConVar("ttt2_mut_healing_amount"):GetInt().."/s"
 				else
 					return 0
 				end
