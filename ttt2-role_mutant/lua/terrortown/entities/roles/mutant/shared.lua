@@ -49,7 +49,7 @@ if SERVER then
 		--Give mutant the default status
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
 		STATUS:AddStatus(ply, "ttt2_mut_regen", false)
-		ply.damage_taken = 0
+		ply.mutant_damage_taken = 0
 		ply.mutant_credits_awarded = 0
 		MutantSendDamageTaken(ply,0)
 	end
@@ -76,14 +76,14 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut_regen")
 		STATUS:RemoveStatus(ply, "ttt2_mut_maxhp")
-		ply.damage_taken = 0		
+		ply.mutant_damage_taken = 0		
 		ply.mutant_credits_awarded = 0
 		MutantSendDamageTaken(ply,0)
 	end
-		function MutantSendDamageTaken(mutant_ply, damage_taken)
-		print("Mutant Receive Damage: "..damage_taken)
+		function MutantSendDamageTaken(mutant_ply, mutant_damage_taken)
+		print("Mutant Receive Damage: "..mutant_damage_taken)
 		net.Start("SendMutantDamage")
-		net.WriteInt(damage_taken or 0, 32) -- Send the number (32-bit signed integer)
+		net.WriteInt(mutant_damage_taken or 0, 32) -- Send the number (32-bit signed integer)
 		net.Send(mutant_ply)
 		end
 end
@@ -163,9 +163,9 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not GetConVar("ttt2_mut_propdmg"):GetBool() and dmginfo:IsDamageType( 1 ) then return end
 	--round float to nearest integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
-	target.damage_taken = target.damage_taken + dmgtaken
+	target.mutant_damage_taken = target.mutant_damage_taken + dmgtaken
 	--target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.mutant_damage_taken)
-	MutantSendDamageTaken(target, target.damage_taken)
+	MutantSendDamageTaken(target, target.mutant_damage_taken)
 	computeBuffs(target)
 	--no healing for 5 seconds after taking damage
 	heal_time = (CurTime() + 5)
