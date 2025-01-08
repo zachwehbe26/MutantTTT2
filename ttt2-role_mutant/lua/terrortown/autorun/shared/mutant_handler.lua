@@ -23,7 +23,7 @@ hook.Add("Think","MutHealThink", function()
 			ply:SetHealth(ply:Health()+ GetConVar("ttt2_mut_healing_amount"):GetInt())
 			STATUS:AddStatus(ply, "ttt2_mut_regen", false)
 		else 
-			ply:SetHealth(ply:GetMaxHealth())
+			ply:SetHealth(math.max(ply:GetMaxHealth(),ply:Health()))
 			STATUS:AddStatus(ply, "ttt2_mut_regen", false)
 		end
 	end
