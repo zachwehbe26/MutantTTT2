@@ -50,6 +50,7 @@ if SERVER then
 		STATUS:AddStatus(ply, "ttt2_mut1_icon", false)
 		STATUS:AddStatus(ply, "ttt2_mut_regen", false)
 		ply.damage_taken = 0
+		ply.mutant_credits_awarded = 0
 		MutantSendDamageTaken(ply,0)
 	end
 
@@ -75,7 +76,8 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut_regen")
 		STATUS:RemoveStatus(ply, "ttt2_mut_maxhp")
-		ply.damage_taken = 0
+		ply.damage_taken = 0		
+		ply.mutant_credits_awarded = 0
 		MutantSendDamageTaken(ply,0)
 	end
 		function MutantSendDamageTaken(mutant_ply, damage_taken)
@@ -89,25 +91,38 @@ end
 
 --does the math to determine what buffs to give, and what status to give
 function computeBuffs(mutant_ply)
-	if mutant_ply.damage_taken >= 50 and not mutant_ply:HasEquipmentItem("item_ttt_radar") then
+
+	local mutant_damage_taken = mutant_ply.mutant_damage_taken
+	if GetConVar("ttt2_mut_shop"):GetBool() then
+		local mutant_credits_awarded = mutant_ply.mutant_credits_awarded
+		while mutant_damage_taken >= 50 * (1 + mutant_credits_awarded) do
+			mutant_ply:AddCredits(1)
+			mutant_ply:PrintMessage(HUD_PRINTTALK, "50 Damage Taken! You earned 1 credit.")
+			mutant_credits_awarded = mutant_credits_awarded + 1
+			mutant_ply.mutant_credits_awarded = mutant_credits_awarded
+		end		
+		return
+	end
+
+	if mutant_damage_taken >= 50 and not mutant_ply:HasEquipmentItem("item_ttt_radar") then
 		mutant_ply:GiveEquipmentItem("item_ttt_radar")
 		mutant_ply:PrintMessage(HUD_PRINTTALK, "50 Damage Taken! You now have a radar.")
-		if mutant_ply.damage_taken <= 74 then
+		if mutant_damage_taken <= 74 then
 			STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
 			STATUS:AddStatus(mutant_ply, "ttt2_mut2_icon", false)
 		end
 	end
-	if mutant_ply.damage_taken >= 75 and mutant_ply:GetMaxHealth() <= 100 then
+	if mutant_damage_taken >= 75 and mutant_ply:GetMaxHealth() <= 100 then
 		mutant_ply:SetMaxHealth(150)
 		mutant_ply:PrintMessage(HUD_PRINTTALK, "75 Damage Taken! You now have 150 max health")
 		STATUS:AddStatus(mutant_ply, "ttt2_mut_maxhp", false)
-		if mutant_ply.damage_taken <= 99 then
+		if mutant_damage_taken <= 99 then
 			STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
 			STATUS:RemoveStatus(mutant_ply, "ttt2_mut2_icon")
 			STATUS:AddStatus(mutant_ply, "ttt2_mut3_icon", false)
 		end
 	end
-	if mutant_ply.damage_taken >= 100 and not mutant_ply:HasEquipmentItem("item_mut_speed") then
+	if mutant_damage_taken >= 100 and not mutant_ply:HasEquipmentItem("item_mut_speed") then
 		mutant_ply:GiveItem("item_mut_speed")
 		mutant_ply:PrintMessage(HUD_PRINTTALK, "100 Damage Taken! You are faster.")
 		STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
@@ -117,8 +132,8 @@ function computeBuffs(mutant_ply)
 	end
 	--for every 10 dmg the mutant takes after taking 100 damage, increase its health by 1
 	if mutant_ply:HasEquipmentItem("item_mut_speed") then
-		if(mutant_ply.damage_taken - 100) / 10 >= 1 then 
-			local computeNewHealth = math.floor(150 + (mutant_ply.damage_taken - 100) / 10)
+		if(mutant_damage_taken - 100) / 10 >= 1 then 
+			local computeNewHealth = math.floor(150 + (mutant_damage_taken - 100) / 10)
 			mutant_ply:PrintMessage(HUD_PRINTTALK, "Max Health increased by " .. (computeNewHealth - mutant_ply:GetMaxHealth()))
 			mutant_ply:SetMaxHealth(computeNewHealth)
 		end
@@ -259,6 +274,7 @@ CreateConVar("ttt2_mut_explosivedmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_falldmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_propdmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_attribute_plydmg_only", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_shop", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 --Adds convars to the F1 menu
 if CLIENT then
@@ -312,6 +328,11 @@ if CLIENT then
 	form:MakeCheckBox({
       serverConvar = "ttt2_mut_attribute_plydmg_only",
       label = "label_mut_attribute_plydmg_only"
+    })
+	
+	form:MakeCheckBox({
+      serverConvar = "ttt2_mut_shop",
+      label = "label_mut_shop"
     })
 	
   end

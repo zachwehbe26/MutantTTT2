@@ -4,8 +4,8 @@ end
 
 ITEM.EquipMenuData = {
     type = "item_passive",
-    name = "lang name here",
-    desc = "lang desc here",
+    name = "title_item_mutant_speed",
+    desc = "desc_item_mutant_speed",
 }
 ITEM.CanBuy = { }
 
