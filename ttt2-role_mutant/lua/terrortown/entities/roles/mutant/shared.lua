@@ -158,23 +158,6 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	STATUS:RemoveStatus(target, "ttt2_mut_regen")
 end)
 
-if CLIENT then
-	hook.Add("TTTBeginRound", "MutantBeginRound", function()
-		local client = LocalPlayer()
-		if client:GetSubRole() ~= ROLE_MUTANT then return end
-		if not IsValid(client) or not client:IsPlayer() then return end
-		client.mutant_damage_taken = 0
-		MutantSendDamageTaken(client,0)
-	end)
-	hook.Add("TTTEndRound", "MutantEndRound", function()
-		local client = LocalPlayer()
-		if client:GetSubRole() ~= ROLE_MUTANT then return end
-		if not IsValid(client) or not client:IsPlayer() then return end
-		client.mutant_damage_taken = 0
-		MutantSendDamageTaken(client,0)
-	end)
-end
-
 -- -- -- -- --
 -- STATUSES -- 
 -- -- -- -- --
@@ -237,7 +220,7 @@ if CLIENT then
 			type = "good",
 			DrawInfo = function()
 				if GetConVar("ttt2_mut_healing_amount"):GetInt() then
-					return "+"..GetConVar("ttt2_mut_healing_amount"):GetInt().."/s"
+					return "+"..(math.Round(GetConVar("ttt2_mut_healing_amount"):GetInt() * 100 / GetConVar("ttt2_mut_healing_interval"):GetInt())/100).."/s"
 				else
 					return 0
 				end
