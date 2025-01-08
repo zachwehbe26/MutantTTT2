@@ -74,6 +74,7 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut3_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut_regen")
+		STATUS:RemoveStatus(ply, "ttt2_mut_maxhp")
 		ply.damage_taken = 0
 		MutantSendDamageTaken(ply,0)
 	end
@@ -99,6 +100,7 @@ function computeBuffs(mutant_ply)
 	if mutant_ply.damage_taken >= 75 and mutant_ply:GetMaxHealth() <= 100 then
 		mutant_ply:SetMaxHealth(150)
 		mutant_ply:PrintMessage(HUD_PRINTTALK, "75 Damage Taken! You now have 150 max health")
+		STATUS:AddStatus(mutant_ply, "ttt2_mut_maxhp", false)
 		if mutant_ply.damage_taken <= 99 then
 			STATUS:RemoveStatus(mutant_ply, "ttt2_mut1_icon")
 			STATUS:RemoveStatus(mutant_ply, "ttt2_mut2_icon")
@@ -235,7 +237,7 @@ if CLIENT then
 			type = "good",
 			DrawInfo = function()
 				if GetConVar("ttt2_mut_healing_amount"):GetInt() then
-					return GetConVar("ttt2_mut_healing_amount"):GetInt()
+					return "+"..GetConVar("ttt2_mut_healing_amount"):GetInt().."/s"
 				else
 					return 0
 				end
@@ -248,6 +250,15 @@ if CLIENT then
 			type = "bad",
 			name = "Mutant",
 			sidebarDescription = "status_mut_regen_cooldown"
+		})
+		STATUS:RegisterStatus("ttt2_mut_maxhp", {
+			hud = Material("vgui/ttt/icons/hpmax_mut.png"),
+			type = "good",
+			DrawInfo = function()
+				return "+"..(LocalPlayer():GetMaxHealth() - 100)
+			end,
+			name = "Mutant",
+			sidebarDescription = "status_mut_maxhp"
 		})
 		
 	end) 
