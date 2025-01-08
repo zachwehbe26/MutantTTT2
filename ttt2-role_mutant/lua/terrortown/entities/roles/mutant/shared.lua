@@ -100,6 +100,10 @@ function computeBuffs(mutant_ply)
 			mutant_ply:PrintMessage(HUD_PRINTTALK, "50 Damage Taken! You earned 1 credit.")
 			mutant_credits_awarded = mutant_credits_awarded + 1
 			mutant_ply.mutant_credits_awarded = mutant_credits_awarded
+			--Update dmg status
+			if (1 + mutant_credits_awarded) > 4 then return end
+			STATUS:AddStatus(mutant_ply, "ttt2_mut"..(1 + mutant_credits_awarded).."_icon",false)
+			STATUS:RemoveStatus(mutant_ply, "ttt2_mut"..( mutant_credits_awarded ).."_icon")
 		end		
 		return
 	end
