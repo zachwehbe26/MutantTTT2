@@ -18,7 +18,7 @@ L["label_mut_falldmg"] = "Mutant receives fall damage"
 L["label_mut_propdmg"] = "Mutant receives prop damage"
 L["label_mut_attribute_plydmg_only"] = "Mutant damage only attributed by other player damage" 
 L["label_mut_shop"] = "Mutant is rewarded credits and has a shop instead of getting buffs directly for damage" 
-
+L["label_mut_damage_per_credit"] = "[Requires Mutant Shop enabled] Damager per credit" 
 
 L["status_mut1_icon"] = "Take damage to receive buffs!"
 L["status_mut2_icon"] = "You have taken 50 damage and received a radar!"

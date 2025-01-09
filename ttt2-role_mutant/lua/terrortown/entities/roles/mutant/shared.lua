@@ -65,10 +65,15 @@ if SERVER then
 		if not GetConVar("ttt2_mut_falldmg"):GetBool() then
 			ply:RemoveEquipmentItem("item_ttt_nofalldmg")
 		end
-		ply:RemoveEquipmentItem("item_ttt_nopropdmg")
+		if not GetConVar("ttt2_mut_propdmg"):GetBool() then
+			ply:RemoveEquipmentItem("item_ttt_nopropdmg")
+		end
+		if not GetConVar("ttt2_mut_shop"):GetBool() then
+			ply:RemoveEquipmentItem("item_ttt_radar")
+			ply:RemoveItem("item_mut_speed")
+		end
 		ply:SetMaxHealth(100)
-		ply:RemoveEquipmentItem("item_ttt_radar")
-		ply:RemoveItem("item_mut_speed")
+		
 		timer.Remove("ttt2_mut_regen_timer")
 		STATUS:RemoveStatus(ply, "ttt2_mut1_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut2_icon")
@@ -90,14 +95,14 @@ end
 
 
 --does the math to determine what buffs to give, and what status to give
-function computeBuffs(mutant_ply)
+local function MutantComputeBuffs(mutant_ply)
 
 	local mutant_damage_taken = mutant_ply.mutant_damage_taken
 	if GetConVar("ttt2_mut_shop"):GetBool() then
 		local mutant_credits_awarded = mutant_ply.mutant_credits_awarded
-		while mutant_damage_taken >= 50 * (1 + mutant_credits_awarded) do
+		while mutant_damage_taken >= GetConVar("ttt2_mut_damage_per_credit"):GetInt() * (1 + mutant_credits_awarded) do
 			mutant_ply:AddCredits(1)
-			mutant_ply:PrintMessage(HUD_PRINTTALK, "50 Damage Taken! You earned 1 credit.")
+			mutant_ply:PrintMessage(HUD_PRINTTALK, (GetConVar("ttt2_mut_damage_per_credit"):GetInt().." Damage Taken! You earned 1 credit."))
 			mutant_credits_awarded = mutant_credits_awarded + 1
 			mutant_ply.mutant_credits_awarded = mutant_credits_awarded
 			--Update dmg status
@@ -170,7 +175,7 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	target.mutant_damage_taken = target.mutant_damage_taken + dmgtaken
 	--target:PrintMessage(HUD_PRINTTALK, "Total Dmg: " .. target.mutant_damage_taken)
 	MutantSendDamageTaken(target, target.mutant_damage_taken)
-	computeBuffs(target)
+	MutantComputeBuffs(target)
 	--no healing for 5 seconds after taking damage
 	heal_time = (CurTime() + 5)
 	STATUS:AddTimedStatus(target, "ttt2_mut_healing_cooldown", 5, true)
@@ -279,6 +284,7 @@ CreateConVar("ttt2_mut_falldmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_propdmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_attribute_plydmg_only", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_shop", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_damage_per_credit", 50, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 --Adds convars to the F1 menu
 if CLIENT then
@@ -338,6 +344,14 @@ if CLIENT then
       serverConvar = "ttt2_mut_shop",
       label = "label_mut_shop"
     })
+
+	form:MakeSlider({
+      serverConvar = "ttt2_mut_damage_per_credit",
+      label = "label_mut_damage_per_credit",
+      min = 1,
+      max = 100,
+      decimal = 0
+	})
 	
   end
 end
