@@ -8,7 +8,7 @@ ITEM.EquipMenuData = {
     desc = "desc_item_mutant_health",
 }
 
-ITEM.material = "vgui/ttt/icon_armor"
+ITEM.material = "vgui/ttt/icon_mutant_health"
 ITEM.CanBuy = { ROLE_MUTANT }
 ITEM.limited = false
 
