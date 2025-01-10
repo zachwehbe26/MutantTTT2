@@ -177,7 +177,7 @@ hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	MutantSendDamageTaken(target, target.mutant_damage_taken)
 	MutantComputeBuffs(target)
 	--no healing for 5 seconds after taking damage
-	heal_time = (CurTime() + 5)
+	mutant_heal_time = (CurTime() + 5)
 	STATUS:AddTimedStatus(target, "ttt2_mut_healing_cooldown", 5, true)
 	STATUS:RemoveStatus(target, "ttt2_mut_regen")
 end)
