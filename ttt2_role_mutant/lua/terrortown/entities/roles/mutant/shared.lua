@@ -105,7 +105,7 @@ local function MutantComputeBuffs(mutant_ply)
 				mutant_ply:AddCredits(1)
 				mutant_ply:PrintMessage(HUD_PRINTTALK, GetConVar("ttt2_mut_damage_per_credit"):GetInt() .. " Damage Taken! You earned 1 credit.")
 			else
-				mutant_ply:PrintMessage(HUD_PRINTTALK, GetConVar("Credit limit reached!"))
+				mutant_ply:PrintMessage(HUD_PRINTTALK, "Credit limit reached!")
 			end
 			mutant_credits_awarded = mutant_credits_awarded + 1
 			mutant_ply.mutant_credits_awarded = mutant_credits_awarded
