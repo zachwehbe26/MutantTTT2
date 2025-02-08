@@ -4,35 +4,35 @@ if SERVER then
 end
 
 function ROLE:PreInitialize()
-  self.color = Color(0, 101, 51, 255)
+	self.color = Color(0, 101, 51, 255)
 
-  self.abbr = "mut" -- abbreviation
-  self.surviveBonus = 0 -- bonus multiplier for every survive while another player was killed
-  self.scoreKillsMultiplier = 2 -- multiplier for kill of player of another team
-  self.scoreTeamKillsMultiplier = -8 -- multiplier for teamkill
-  self.unknownTeam = true
+	self.abbr = "mut" -- abbreviation
 
-  self.defaultTeam = TEAM_INNOCENT
+	self.score.killsMultiplier = 2
+	self.score.teamKillsMultiplier = -8
+	self.unknownTeam = true
 
-  self.conVarData = {
-    pct = 0.17, -- necessary: percentage of getting this role selected (per player)
-    maximum = 1, -- maximum amount of roles in a round
-    minPlayers = 6, -- minimum amount of players until this role is able to get selected
-    credits = 0, -- the starting credits of a specific role
-    togglable = true, -- option to toggle a role for a client if possible (F1 menu)
-    random = 33,
-    traitorButton = 0, -- can use traitor buttons
-    shopFallback = SHOP_DISABLED
-  }
+	self.defaultTeam = TEAM_INNOCENT
+
+	self.conVarData = {
+		pct = 0.17, -- necessary: percentage of getting this role selected (per player)
+		maximum = 1, -- maximum amount of roles in a round
+		minPlayers = 6, -- minimum amount of players until this role is able to get selected
+		credits = 0, -- the starting credits of a specific role
+		togglable = true, -- option to toggle a role for a client if possible (F1 menu)
+		random = 33,
+		traitorButton = 0, -- can use traitor buttons
+		shopFallback = SHOP_DISABLED
+	}
 end
 
 -- now link this subrole with its baserole
 function ROLE:Initialize()
-  roles.SetBaseRole(self, ROLE_INNOCENT)
+	roles.SetBaseRole(self, ROLE_INNOCENT)
 end
 
 if SERVER then
-   -- Give Loadout on respawn and rolechange
+	 -- Give Loadout on respawn and rolechange
 	function ROLE:GiveRoleLoadout(ply, isRoleChange)
 		if not GetConVar("ttt2_mut_firedmg"):GetBool() then
 			ply:GiveEquipmentItem("item_ttt_nofiredmg")
@@ -73,7 +73,7 @@ if SERVER then
 			ply:RemoveItem("item_mut_speed")
 		end
 		ply:SetMaxHealth(100)
-		
+
 		timer.Remove("ttt2_mut_regen_timer")
 		STATUS:RemoveStatus(ply, "ttt2_mut1_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut2_icon")
@@ -81,12 +81,12 @@ if SERVER then
 		STATUS:RemoveStatus(ply, "ttt2_mut4_icon")
 		STATUS:RemoveStatus(ply, "ttt2_mut_regen")
 		STATUS:RemoveStatus(ply, "ttt2_mut_maxhp")
-		ply.mutant_damage_taken = 0		
+		ply.mutant_damage_taken = 0
 		ply.mutant_credits_awarded = 0
 		MutantSendDamageTaken(ply,0)
 	end
 		function MutantSendDamageTaken(mutant_ply, mutant_damage_taken)
-		print("Mutant Receive Damage: "..mutant_damage_taken)
+		print("Mutant Receive Damage: " .. mutant_damage_taken)
 		net.Start("SendMutantDamage")
 		net.WriteInt(mutant_damage_taken or 0, 32) -- Send the number (32-bit signed integer)
 		net.Send(mutant_ply)
@@ -101,15 +101,19 @@ local function MutantComputeBuffs(mutant_ply)
 	if GetConVar("ttt2_mut_shop"):GetBool() then
 		local mutant_credits_awarded = mutant_ply.mutant_credits_awarded
 		while mutant_damage_taken >= GetConVar("ttt2_mut_damage_per_credit"):GetInt() * (1 + mutant_credits_awarded) do
-			mutant_ply:AddCredits(1)
-			mutant_ply:PrintMessage(HUD_PRINTTALK, (GetConVar("ttt2_mut_damage_per_credit"):GetInt().." Damage Taken! You earned 1 credit."))
+			if mutant_credits_awarded < GetConVar("ttt2_mut_max_credits"):GetInt() then
+				mutant_ply:AddCredits(1)
+				mutant_ply:PrintMessage(HUD_PRINTTALK, GetConVar("ttt2_mut_damage_per_credit"):GetInt() .. " Damage Taken! You earned 1 credit.")
+			else
+				mutant_ply:PrintMessage(HUD_PRINTTALK, GetConVar("Credit limit reached!"))
+			end
 			mutant_credits_awarded = mutant_credits_awarded + 1
 			mutant_ply.mutant_credits_awarded = mutant_credits_awarded
 			--Update dmg status
 			if (1 + mutant_credits_awarded) > 4 then return end
-			STATUS:AddStatus(mutant_ply, "ttt2_mut"..(1 + mutant_credits_awarded).."_icon",false)
-			STATUS:RemoveStatus(mutant_ply, "ttt2_mut"..( mutant_credits_awarded ).."_icon")
-		end		
+			STATUS:AddStatus(mutant_ply, "ttt2_mut" .. (1 + mutant_credits_awarded) .. "_icon",false)
+			STATUS:RemoveStatus(mutant_ply, "ttt2_mut" .. mutant_credits_awarded .. "_icon")
+		end
 		return
 	end
 
@@ -140,20 +144,18 @@ local function MutantComputeBuffs(mutant_ply)
 		STATUS:AddStatus(mutant_ply, "ttt2_mut4_icon", false)
 	end
 	--for every 10 dmg the mutant takes after taking 100 damage, increase its health by 1
-	if mutant_ply:HasEquipmentItem("item_mut_speed") then
-		if(mutant_damage_taken - 100) / 10 >= 1 then 
-			local computeNewHealth = math.floor(150 + (mutant_damage_taken - 100) / 10)
-			mutant_ply:PrintMessage(HUD_PRINTTALK, "Max Health increased by " .. (computeNewHealth - mutant_ply:GetMaxHealth()))
-			mutant_ply:SetMaxHealth(computeNewHealth)
-		end
+	if mutant_ply:HasEquipmentItem("item_mut_speed") and ((mutant_damage_taken - 100) / 10 >= 1) then
+		local computeNewHealth = math.floor(150 + (mutant_damage_taken - 100) / 10)
+		mutant_ply:PrintMessage(HUD_PRINTTALK, "Max Health increased by " .. (computeNewHealth - mutant_ply:GetMaxHealth()))
+		mutant_ply:SetMaxHealth(computeNewHealth)
 	end
 end
 
 if CLIENT then
-    net.Receive("SendMutantDamage", function()
-        local mutant_damage_taken = net.ReadInt(32) -- Receive the number and set the variable
+		net.Receive("SendMutantDamage", function()
+				local mutant_damage_taken = net.ReadInt(32) -- Receive the number and set the variable
 		LocalPlayer().mutant_damage_taken = mutant_damage_taken
-    end)
+		end)
 end
 
 --calls this hook when someone takes damage
@@ -161,15 +163,25 @@ end
 hook.Add("EntityTakeDamage", "ttt2_mut_damage_taken", function(target,dmginfo)
 	if not IsValid(target) or not target:IsPlayer() then return end
 	if target:GetSubRole() ~= ROLE_MUTANT then return end
-	local dmgtaken =  dmginfo:GetDamage()
-	if GetConVar("ttt2_mut_attribute_plydmg_only"):GetBool() then --Check if mutant attribute damage is only applied from other players
-		if not dmginfo:GetAttacker():IsPlayer() or dmginfo:GetAttacker() == target then return end --If damage is not from another player or is the mutant, do not add to damage
-	end
-	--End function if damage is fire/explosive/fall with cvar
-	if not GetConVar("ttt2_mut_firedmg"):GetBool() and dmginfo:IsDamageType( 8 ) then return end
-	if not GetConVar("ttt2_mut_explosivedmg"):GetBool() and dmginfo:IsDamageType( 64 ) then return end
-	if not GetConVar("ttt2_mut_falldmg"):GetBool() and dmginfo:IsDamageType( 32 ) then return end
-	if not GetConVar("ttt2_mut_propdmg"):GetBool() and dmginfo:IsDamageType( 1 ) then return end
+
+	local attacker = dmginfo:GetAttacker()
+	if IsValid(attacker) and attacker:IsPlayer() and (
+		attacker:GetSubRole() == ROLE_DEFECTOR
+		or attacker:GetSubRole() == ROLE_JESTER
+	) then return end
+
+	--If we have the right resistance item, we are not counting this damage.
+	if dmginfo:IsDamageType(DMG_BLAST) and target:HasEquipmentItem("item_ttt_noexplosiondmg") then return end
+	if dmginfo:IsDamageType(DMG_FALL) and target:HasEquipmentItem("item_ttt_nofalldmg") then return end
+	if dmginfo:IsDamageType(DMG_DROWN) and target:HasEquipmentItem("item_ttt_nodrowningdmg") then return end
+	if dmginfo:IsDamageType(DMG_CRUSH) and target:HasEquipmentItem("item_ttt_nopropdmg") then return end
+	if dmginfo:IsDamageType(DMG_BURN) and target:HasEquipmentItem("item_ttt_nofiredmg") then return end
+	if dmginfo:IsDamageType(DMG_SHOCK + DMG_SONIC + DMG_ENERGYBEAM + DMG_PHYSGUN + DMG_PLASMA)	and target:HasEquipmentItem("item_ttt_noenergydmg") then return end
+	if dmginfo:IsDamageType(DMG_POISON + DMG_NERVEGAS + DMG_RADIATION + DMG_ACID + DMG_DISSOLVE) and target:HasEquipmentItem("item_ttt_nohazarddmg") then return end
+
+	local dmgtaken = dmginfo:GetDamage()
+	if GetConVar("ttt2_mut_attribute_plydmg_only"):GetBool() and ((not dmginfo:GetAttacker():IsPlayer()) or (dmginfo:GetAttacker() == target)) then return end --If damage is not from another player or is the mutant, do not add to damage
+
 	--round float to nearest integer
 	dmgtaken = math.floor(dmgtaken + 0.5)
 	target.mutant_damage_taken = target.mutant_damage_taken + dmgtaken
@@ -186,7 +198,7 @@ end)
 -- STATUSES -- 
 -- -- -- -- --
 if CLIENT then
-	hook.Add("Initialize", "ttt2_mut_init", function()		
+	hook.Add("Initialize", "ttt2_mut_init", function()
 		STATUS:RegisterStatus("ttt2_mut1_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut1.png"),
 			type = "good",
@@ -212,7 +224,7 @@ if CLIENT then
 			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut2_icon"
-		})	
+		})
 		STATUS:RegisterStatus("ttt2_mut3_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut3.png"),
 			type = "good",
@@ -225,7 +237,7 @@ if CLIENT then
 			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut3_icon"
-		})	
+		})
 		STATUS:RegisterStatus("ttt2_mut4_icon", {
 			hud = Material("vgui/ttt/icons/icon_mut4.png"),
 			type = "good",
@@ -244,7 +256,7 @@ if CLIENT then
 			type = "good",
 			DrawInfo = function()
 				if GetConVar("ttt2_mut_healing_amount"):GetInt() then
-					return "+"..(math.Round(GetConVar("ttt2_mut_healing_amount"):GetInt() * 100 / GetConVar("ttt2_mut_healing_interval"):GetInt())/100).."/s"
+					return "+" .. (math.Round(GetConVar("ttt2_mut_healing_amount"):GetInt() * 100 / GetConVar("ttt2_mut_healing_interval"):GetInt()) / 100) .. "/s"
 				else
 					return 0
 				end
@@ -262,13 +274,12 @@ if CLIENT then
 			hud = Material("vgui/ttt/icons/hpmax_mut.png"),
 			type = "good",
 			DrawInfo = function()
-				return "+"..(LocalPlayer():GetMaxHealth() - 100)
+				return "+" .. (LocalPlayer():GetMaxHealth() - 100)
 			end,
 			name = "Mutant",
 			sidebarDescription = "status_mut_maxhp"
 		})
-		
-	end) 
+	end)
 end
 
 
@@ -285,73 +296,81 @@ CreateConVar("ttt2_mut_propdmg", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_attribute_plydmg_only", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_shop", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 CreateConVar("ttt2_mut_damage_per_credit", 50, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+CreateConVar("ttt2_mut_max_credits", 10, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 
 --Adds convars to the F1 menu
 if CLIENT then
-  function ROLE:AddToSettingsMenu(parent)
-    local form = vgui.CreateTTT2Form(parent, "header_roles_additional")
-	
-    form:MakeSlider({
-      serverConvar = "ttt2_mut_healing_interval",
-      label = "label_mut_healing_interval",
-      min = 1,
-      max = 10,
-      decimal = 0
+	function ROLE:AddToSettingsMenu(parent)
+		local form = vgui.CreateTTT2Form(parent, "header_roles_additional")
+
+		form:MakeSlider({
+			serverConvar = "ttt2_mut_healing_interval",
+			label = "label_mut_healing_interval",
+			min = 1,
+			max = 10,
+			decimal = 0
 	})
-	
-	form:MakeSlider({
-      serverConvar = "ttt2_mut_healing_amount",
-      label = "label_mut_healing_amount",
-      min = 1,
-      max = 10,
-      decimal = 0
-	})
-	
-	form:MakeSlider({
-      serverConvar = "ttt2_mut_speed_multiplier",
-      label = "label_mut_speed_multiplier",
-      min = 1.0,
-      max = 2.0,
-      decimal = 2
-	})
-	
-	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_firedmg",
-      label = "label_mut_firedmg"
-    })
-	
-	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_explosivedmg",
-      label = "label_mut_explosivedmg"
-    })
-	
-	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_falldmg",
-      label = "label_mut_falldmg"
-    })
-	
-	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_propdmg",
-      label = "label_mut_propdmg"
-    })
-	
-	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_attribute_plydmg_only",
-      label = "label_mut_attribute_plydmg_only"
-    })
-	
-	form:MakeCheckBox({
-      serverConvar = "ttt2_mut_shop",
-      label = "label_mut_shop"
-    })
 
 	form:MakeSlider({
-      serverConvar = "ttt2_mut_damage_per_credit",
-      label = "label_mut_damage_per_credit",
-      min = 1,
-      max = 100,
-      decimal = 0
+			serverConvar = "ttt2_mut_healing_amount",
+			label = "label_mut_healing_amount",
+			min = 1,
+			max = 10,
+			decimal = 0
 	})
-	
-  end
+
+	form:MakeSlider({
+			serverConvar = "ttt2_mut_speed_multiplier",
+			label = "label_mut_speed_multiplier",
+			min = 1.0,
+			max = 2.0,
+			decimal = 2
+	})
+
+	form:MakeCheckBox({
+			serverConvar = "ttt2_mut_firedmg",
+			label = "label_mut_firedmg"
+		})
+
+	form:MakeCheckBox({
+			serverConvar = "ttt2_mut_explosivedmg",
+			label = "label_mut_explosivedmg"
+		})
+
+	form:MakeCheckBox({
+			serverConvar = "ttt2_mut_falldmg",
+			label = "label_mut_falldmg"
+		})
+
+	form:MakeCheckBox({
+			serverConvar = "ttt2_mut_propdmg",
+			label = "label_mut_propdmg"
+		})
+
+	form:MakeCheckBox({
+			serverConvar = "ttt2_mut_attribute_plydmg_only",
+			label = "label_mut_attribute_plydmg_only"
+		})
+
+	form:MakeCheckBox({
+			serverConvar = "ttt2_mut_shop",
+			label = "label_mut_shop"
+		})
+
+	form:MakeSlider({
+			serverConvar = "ttt2_mut_damage_per_credit",
+			label = "label_mut_damage_per_credit",
+			min = 1,
+			max = 100,
+			decimal = 0
+	})
+
+	form:MakeSlider({
+		serverConvar = "ttt2_mut_max_credits",
+		label = "label_mut_max_credits",
+		min = 1,
+		max = 20,
+		decimal = 0
+		})
+	end
 end
